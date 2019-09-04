@@ -388,17 +388,7 @@ cdef class ConditionalProbabilityTable(MultivariateDistribution):
 		X = numpy.array(X)
 		n, d = X.shape
 
-		keys = [numpy.unique(X[:,i]) for i in range(d)]
-
-		for i in range(d):
-			keys_ = []
-			for key in keys[i]:
-				if _check_nan(key):
-					continue
-
-				keys_.append(key)
-
-			keys[i] = keys_
+		keys = [[key for key in numpy.unique(X[:,i]) if not _check_nan(key)] for i in range(d)]
 
 		table = []
 		for key in it.product(*keys):
