@@ -89,7 +89,7 @@ cdef class BayesModel(Model):
                 self.keymap = dist.keymap
 
         if weights is None:
-            weights = numpy.ones_like(distributions, dtype='float64') / self.n
+            weights = numpy.fill_like(distributions, 1 / self.n, dtype='float64')
         else:
             weights = numpy.array(weights, dtype='float64') / sum(weights)
 
