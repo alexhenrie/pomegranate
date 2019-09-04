@@ -1854,11 +1854,11 @@ def discrete_exact_component(X, weights, task, key_count, pseudocount,
 	cdef set child_set
 
 	_, parent_vars, children_vars = task
-	variable_set = set([])
+	variable_set = set()
 	for parents in parent_vars:
-		variable_set = variable_set.union(parents)
+		variable_set |= parents
 	for children in children_vars:
-		variable_set = variable_set.union(children)
+		variable_set |= children
 
 	parent_sets = {variable: () for variable in variable_set}
 	child_sets = {variable: () for variable in variable_set}
@@ -1873,7 +1873,7 @@ def discrete_exact_component(X, weights, task, key_count, pseudocount,
 			max_parents, parents) for child, parents in parent_sets.items())
 
 	parent_graphs = [None for i in range(d)]
-	for (child, _), graph in zip(parent_sets.items(), graphs):
+	for child, graph in zip(parent_sets.keys(), graphs):
 		parent_graphs[child] = graph
 
 	last_layer = []
@@ -1894,7 +1894,7 @@ def discrete_exact_component(X, weights, task, key_count, pseudocount,
 	layer = []
 	layer_children = []
 
-	seen_entries = {(variable,): 1 for variable in variable_set}
+	seen_entries = variable_set.copy()
 
 	for i in range(len(variable_set)-1):
 		for parent_entry, child_set in zip(last_layer, last_layer_children):
@@ -1908,13 +1908,14 @@ def discrete_exact_component(X, weights, task, key_count, pseudocount,
 
 				order_graph.add_edge(parent_entry, entry, weight=round(weight, 4), structure=structure)
 
-				new_child_set = child_set - set([child])
+				new_child_set = child_set.copy()
+				new_child_set.remove(child)
 				for grandchild in child_sets[child]:
 					if grandchild not in entry:
 						new_child_set.add(grandchild)
 
 				if entry not in seen_entries:
-					seen_entries[entry] = 1
+					seen_entries.add(entry)
 					layer.append(entry)
 					layer_children.append(new_child_set)
 
