@@ -328,7 +328,7 @@ cdef class DiscreteDistribution(Distribution):
 		for X, weight in izip(items, weights):
 			if isinstance(X, str) and X == 'nan':
 				continue
-			elif isinstance(X, (int, float)) and numpy.isnan(X):
+			elif isinstance(X, float) and numpy.isnan(X):
 				continue
 
 			total += weight
