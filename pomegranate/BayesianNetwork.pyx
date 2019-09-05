@@ -1177,10 +1177,10 @@ cdef class ParentGraph(object):
 		self.i = i
 		self.pseudocount = pseudocount
 		self.max_parents = max_parents
-		self.values = {}
 		self.n = X.shape[0]
 		self.d = X.shape[1]
 		self.m = <int*> calloc(self.d+2, sizeof(int))
+		self.values = {(j): ((), 0) for j in range(self.d)}
 		self.parents = <int*> calloc(self.d, sizeof(int))
 
 	def __len__(self):
