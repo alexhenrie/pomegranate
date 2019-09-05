@@ -1,6 +1,7 @@
 # BayesianNetwork.pyx
 # Contact: Jacob Schreiber ( jmschreiber91@gmail.com )
 
+import bisect
 import itertools as it
 import json
 import time
@@ -1695,28 +1696,31 @@ def discrete_greedy(X, weights, key_count, pseudocount, max_parents, n_jobs):
 		The parents for each variable in this SCC
 	"""
 
-	cdef int i, n = X.shape[0], d = X.shape[1]
-	cdef list parent_graphs = []
+	cdef int i, n = X.shape[0], d = X.shape[1], best_variable
+	cdef dict parent_graphs
+	cdef tuple variables_key, parents, best_parents
+	cdef list structure, seen_variables
+	cdef double score, best_score
+	cdef ParentGraph parent_graph
 
-	parent_graphs = [ParentGraph(X, weights, key_count, i, pseudocount, max_parents) for i in range(d)]
-	structure, seen_variables, unseen_variables = [() for i in range(d)], (), set(range(d))
+	parent_graphs = {i: ParentGraph(X, weights, key_count, i, pseudocount, max_parents) for i in range(d)}
+	structure, seen_variables = [None for i in range(d)], []
 
-	for i in range(d):
+	while parent_graphs:
 		best_score = NEGINF
-		best_variable = -1
-		best_parents = None
+		variables_key = tuple(seen_variables)
 
-		for j in unseen_variables:
-			parents, score = parent_graphs[j][seen_variables]
+		for i, parent_graph in parent_graphs.items():
+			parents, score = parent_graph[variables_key]
 
 			if score > best_score:
 				best_score = score
-				best_variable = j
+				best_variable = i
 				best_parents = parents
 
 		structure[best_variable] = best_parents
-		seen_variables = tuple(sorted(seen_variables + (best_variable,)))
-		unseen_variables = unseen_variables - set([best_variable])
+		bisect.insort(seen_variables, best_variable)
+		del parent_graphs[best_variable]
 
 	return tuple(structure)
 
