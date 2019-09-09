@@ -1190,7 +1190,7 @@ cdef class ParentGraph(object):
 		free(self.m)
 		free(self.parents)
 
-	def calculate_value(self, value):
+	cpdef calculate_value(self, value):
 		cdef int k, parent, l = len(value)
 
 		cdef double* X = <double*> self.X.data
@@ -1210,9 +1210,8 @@ cdef class ParentGraph(object):
 		m[l+1] = m[l] * key_count[self.i]
 		m[l+2] = m[l] * (key_count[self.i] - 1)
 
-		with nogil:
-			score = discrete_score_node(X, weights, m, parents, self.n,
-				l+1, self.d, self.pseudocount)
+		score = discrete_score_node(X, weights, m, parents, self.n,
+			l+1, self.d, self.pseudocount)
 
 		return score
 
