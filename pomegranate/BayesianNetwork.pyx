@@ -1050,7 +1050,7 @@ cdef class BayesianNetwork(GraphModel):
 		X = numpy.array(X)
 		n, d = X.shape
 
-		keys = [set([x for x in X[:,i] if not _check_nan(x)]) for i in range(d)]
+		keys = [set(x for x in X[:,i] if not _check_nan(x)) for i in range(d)]
 		keymap = numpy.array([{key: i for i, key in enumerate(keys[j])} for j in range(d)])
 		key_count = numpy.array([len(keymap[i]) for i in range(d)], dtype='int32')
 
