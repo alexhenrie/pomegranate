@@ -11,6 +11,8 @@ cdef extern from "numpy/npy_math.h":
 cdef inline bint isnan(double x) nogil:
 	return npy_isnan(x)
 
+cpdef bint _check_nan(X)
+
 cdef int _is_gpu_enabled() nogil
 cdef python_log_probability(model, double* X, double* log_probability, int n)
 cdef python_summarize(model, double* X, double* weights, int n)

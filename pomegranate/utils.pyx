@@ -449,7 +449,7 @@ def weight_set(items, weights):
 
 	return items, weights
 
-def _check_nan(X):
+cpdef bint _check_nan(X):
 	"""Checks to see if a value is nan, either as a float or a string."""
 	
 	if isinstance(X, (str, unicode, numpy.string_)):
