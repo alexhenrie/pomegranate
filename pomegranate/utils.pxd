@@ -11,6 +11,16 @@ cdef extern from "numpy/npy_math.h":
 cdef inline bint isnan(double x) nogil:
 	return npy_isnan(x)
 
+cdef class PriorityQueue(object):
+	cdef public list pq
+	cdef dict entries
+
+	cpdef void push(self, item, weight)
+	cpdef object get(self, variables)
+	cpdef void delete(self, variables)
+	cpdef bint empty(self)
+	cpdef tuple pop(self)
+
 cpdef bint _check_nan(X)
 
 cdef int _is_gpu_enabled() nogil

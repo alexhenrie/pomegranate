@@ -33,7 +33,7 @@ from .FactorGraph import FactorGraph
 from .utils cimport _log
 from .utils cimport lgamma
 from .utils cimport isnan
-from .utils import PriorityQueue
+from .utils cimport PriorityQueue
 from .utils import plot_networkx
 from .utils import parallelize_function
 from .utils import _check_nan
