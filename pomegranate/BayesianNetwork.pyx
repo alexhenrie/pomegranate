@@ -17,6 +17,7 @@ from joblib import delayed
 from libc.stdlib cimport calloc
 from libc.stdlib cimport free
 from libc.string cimport memset
+from libc.math cimport log2 as _log2
 
 from .base cimport GraphModel
 from .base cimport Model
@@ -1210,7 +1211,7 @@ cdef class ParentGraph(object):
 		m[l+2] = m[l] * (key_count[self.i] - 1)
 
 		score = discrete_score_node(X, weights, m, parents, self.n,
-			l+1, self.d, self.pseudocount)
+			l+1, self.d, self.pseudocount, self.pseudocount * key_count[self.i])
 
 		return score
 
@@ -2020,7 +2021,7 @@ def generate_parent_graph(numpy.ndarray X_ndarray,
 
 				with nogil:
 					best_score = discrete_score_node(X, weights, m, parents, n, j+1,
-						d, pseudocount)
+						d, pseudocount, pseudocount * key_count[i])
 
 			else:
 				best_structure, best_score = (), NEGINF
@@ -2068,7 +2069,7 @@ cdef discrete_find_best_parents(numpy.ndarray X_ndarray,
 
 			with nogil:
 				score = discrete_score_node(X, weights, m, combs, n, k+1, l,
-					pseudocount)
+					pseudocount, pseudocount * key_count[i])
 
 			if score > best_score:
 				best_score = score
@@ -2079,17 +2080,20 @@ cdef discrete_find_best_parents(numpy.ndarray X_ndarray,
 	return best_score, best_parents
 
 cdef double discrete_score_node(double* X, double* weights, int* m, int* parents,
-	int n, int d, int l, double pseudocount) nogil:
-	cdef int i, j, k, idx, is_na
+	int n, int d, int l, double pseudocount, double marginal_pseudocount) nogil:
+	cdef int i, j, k, idx
 	cdef double w_sum = 0
-	cdef double logp = 0
+	cdef double log2p = 0
 	cdef double count, marginal_count
 	cdef double* counts = <double*> calloc(m[d], sizeof(double))
 	cdef double* marginal_counts = <double*> calloc(m[d-1], sizeof(double))
 	cdef double* row;
 
-	memset(counts, 0, m[d]*sizeof(double))
-	memset(marginal_counts, 0, m[d-1]*sizeof(double))
+	for i in range(m[d]):
+		counts[i] = pseudocount
+
+	for i in range(m[d-1]):
+		marginal_counts[i] = marginal_pseudocount
 
 	for i in range(n):
 		idx = 0
@@ -2113,17 +2117,17 @@ cdef double discrete_score_node(double* X, double* weights, int* m, int* parents
 
 	for i in range(m[d]):
 		w_sum += counts[i]
-		count = pseudocount + counts[i]
-		marginal_count = pseudocount * (m[d] / m[d-1]) + marginal_counts[i%m[d-1]]
+		count = counts[i]
 
 		if count > 0:
-			logp += count * _log(count / marginal_count)
+			marginal_count = marginal_counts[i%m[d-1]]
+			log2p += count * _log2(count / marginal_count)
 
 	if w_sum > 1:
-		logp -= _log(w_sum) / 2 * m[d+1]
+		log2p -= _log2(w_sum) / 2 * m[d+1]
 	else:
-		logp = NEGINF
+		log2p = NEGINF
 
 	free(counts)
 	free(marginal_counts)
-	return logp
+	return log2p
