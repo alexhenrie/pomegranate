@@ -920,18 +920,20 @@ cdef class BayesianNetwork(GraphModel):
 				nodes[i] = DiscreteDistribution.from_samples(X[:,i], weights=weights,
 					pseudocount=pseudocount)
 
+		done = False
 		while True:
+			done = True
 			for i, parents in enumerate(structure):
 				if nodes[i] is None:
 					for parent in parents:
 						if nodes[parent] is None:
+							done = False
 							break
 					else:
 						nodes[i] = ConditionalProbabilityTable.from_samples(X[:,parents+(i,)],
 							parents=[nodes[parent] for parent in parents],
 							weights=weights, pseudocount=pseudocount)
-						break
-			else:
+			if done:
 				break
 
 		if state_names is not None:
