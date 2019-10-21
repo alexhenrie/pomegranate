@@ -374,29 +374,22 @@ cdef class BayesianNetwork(GraphModel):
 		self.parent_idxs = <int*> calloc(n, sizeof(int))
 
 		j = 0
+		self.parent_count[0] = 0
 		for i, state in enumerate(self.states):
 			distribution = state.distribution
+			self.parent_count[i+1] = self.parent_count[i] + 1
 			if isinstance(distribution, ConditionalProbabilityTable):
 				for k, parent in enumerate(distribution.parents):
 					distribution.column_idxs[k] = indices[parent]
 				distribution.column_idxs[k+1] = i
 				distribution.n_columns = len(self.states)
-
-			if isinstance(distribution, MultivariateDistribution):
-				self.parent_count[i+1] = len(distribution.parents) + 1
+			elif isinstance(distribution, MultivariateDistribution):
+				self.parent_count[i+1] += len(distribution.parents)
 				for parent in distribution.parents:
 					self.parent_idxs[j] = indices[parent]
 					j += 1
-
-				self.parent_idxs[j] = i
-				j += 1
-			else:
-				self.parent_count[i+1] = 1
-				self.parent_idxs[j] = i
-				j += 1
-
-			if i > 0:
-				self.parent_count[i+1] += self.parent_count[i]
+			self.parent_idxs[j] = i
+			j += 1
 
 	def log_probability(self, X, n_jobs=1):
 		"""Return the log probability of samples under the Bayesian network.
