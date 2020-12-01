@@ -1658,7 +1658,7 @@ cdef class ParentGraph(object):
 
 		with nogil:
 			score = discrete_score_node(X, weights, m, parents, self.n,
-				l+1, self.d, self.pseudocount, self.penalty)
+				l+1, self.d, self.pseudocount, key_count[self.i], self.penalty)
 
 		return score
 
@@ -2604,7 +2604,7 @@ def generate_parent_graph(numpy.ndarray X_ndarray,
 
 						with nogil:
 							best_score = discrete_score_node(X, weights, m,
-								parents, n, j+1, d, pseudocount, penalty)
+								parents, n, j+1, d, pseudocount, key_count[i], penalty)
 
 			for k, variable in enumerate(subset):
 				parent_subset = tuple(l for l in subset if l != variable)
@@ -2650,7 +2650,7 @@ cdef discrete_find_best_parents(numpy.ndarray X_ndarray,
 
 			with nogil:
 				score = discrete_score_node(X, weights, m, combs, n, k+1, l,
-					pseudocount, penalty)
+					pseudocount, key_count[i], penalty)
 
 			if score > best_score:
 				best_score = score
@@ -2661,14 +2661,21 @@ cdef discrete_find_best_parents(numpy.ndarray X_ndarray,
 	return best_score, best_parents
 
 cdef double discrete_score_node(float* X, double* weights, int* m, int* parents,
-	int n, int d, int l, double pseudocount, double penalty) nogil:
+	int n, int d, int l, double pseudocount, double marginal_pseudocount,
+	double penalty) nogil:
 	cdef int i, j, k, idx
 	cdef double w_sum = 0
 	cdef double logp = 0
 	cdef double count, marginal_count
-	cdef double* counts = <double*> calloc(m[d], sizeof(double))
-	cdef double* marginal_counts = <double*> calloc(m[d-1], sizeof(double))
+	cdef double* counts = <double*> malloc(m[d] * sizeof(double))
+	cdef double* marginal_counts = <double*> malloc(m[d-1] * sizeof(double))
 	cdef float* row;
+
+	for i in range(m[d]):
+		counts[i] = pseudocount
+
+	for i in range(m[d-1]):
+		marginal_counts[i] = marginal_pseudocount
 
 	for i in range(n):
 		idx = 0
@@ -2691,11 +2698,11 @@ cdef double discrete_score_node(float* X, double* weights, int* m, int* parents,
 			counts[idx] += weights[i]
 
 	for i in range(m[d]):
-		w_sum += counts[i]
-		count = pseudocount + counts[i]
-		marginal_count = pseudocount * (m[d] / m[d-1]) + marginal_counts[i%m[d-1]]
+		count = counts[i]
+		w_sum += count
 
 		if count > 0:
+			marginal_count = marginal_counts[i%m[d-1]]
 			logp += count * _log2(count / marginal_count)
 
 	if w_sum > 1:
