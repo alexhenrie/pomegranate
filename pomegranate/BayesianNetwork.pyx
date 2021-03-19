@@ -2753,35 +2753,30 @@ cdef double discrete_score_node(float* X, double* weights, int* m, int* parents,
 	cdef double logp = 0
 	cdef double count, marginal_count
 	cdef double* counts = <double*> calloc(m[d], sizeof(double))
-	cdef double* marginal_counts = <double*> calloc(m[d-1], sizeof(double))
 	cdef float* row
 
 	for i in range(n):
 		idx = 0
 		row = X+i*l
 
-		for j in range(d-1):
+		for j in range(d):
 			k = parents[j]
 			if isnan(row[k]):
 				break
-
 			idx += <int> row[k] * m[j]
-
 		else:
-			k = parents[d-1]
-			if isnan(row[k]):
-				continue
-
-			marginal_counts[idx] += weights[i]
-			idx += <int> row[k] * m[d-1]
 			counts[idx] += weights[i]
 
 	for i in range(m[d]):
 		w_sum += counts[i]
 		count = pseudocount + counts[i]
-		marginal_count = pseudocount * (m[d] / m[d-1]) + marginal_counts[i%m[d-1]]
 
 		if count > 0:
+			marginal_count = pseudocount * (m[d] / m[d-1])
+			j = i
+			while j < m[d]:
+				marginal_count += counts[j]
+				j += m[d-1]
 			logp += count * _log2(count / marginal_count)
 
 	if w_sum > 1:
@@ -2793,6 +2788,5 @@ cdef double discrete_score_node(float* X, double* weights, int* m, int* parents,
 		logp = NEGINF
 
 	free(counts)
-	free(marginal_counts)
 	return logp
 
